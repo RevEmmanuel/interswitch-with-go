@@ -1,0 +1,6 @@
+#output for Binaries for programs and plugins
+/bin
+
+#enviromental variables
+*.env
+

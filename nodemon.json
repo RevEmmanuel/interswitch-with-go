@@ -1,0 +1,6 @@
+{
+  "watch": ["src",".env"],
+  "ext": "go",
+  "exec": "go build -o C:/Users/user/go/bin ./src && C:\\Users\\user\\go\\bin\\src.exe",
+  "signal": "SIGTERM"
+}
