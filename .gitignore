@@ -4,3 +4,4 @@
 #enviromental variables
 *.env
 
+.idea
