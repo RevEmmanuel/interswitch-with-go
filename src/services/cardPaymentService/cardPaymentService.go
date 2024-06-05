@@ -6,7 +6,6 @@ import (
 	"errors"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/Dtos/responses"
-	"interswitch_go_testing/src/config"
 	"interswitch_go_testing/src/credentialConfig"
 	"interswitch_go_testing/src/utils"
 	"io"
@@ -73,13 +72,13 @@ func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentReque
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", config.Config.ValidatePurchaseRecurrentUrl, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", credentialConfig.VALIDATE_PURCHASE_RECURRENT_URL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", config.Config.AUTHTOKEN)
+	req.Header.Set("Authorization", credentialConfig.AUTHTOKEN)
 
 	resp, err := client.Do(req)
 	if err != nil {
