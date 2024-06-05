@@ -13,5 +13,5 @@ func TestAuthorization(t *testing.T) {
 	accessToken := GetToken()
 	assert.NotNil(t, accessToken, "The access token should not be nil")
 	assert.NotEmpty(t, accessToken, "The access token should not be empty")
-	t.Logf("Access Token: %s", accessToken)
+	t.Logf("Access Token is: %s", accessToken)
 }
