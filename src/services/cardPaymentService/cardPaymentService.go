@@ -6,10 +6,14 @@ import (
 	"errors"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/Dtos/responses"
+	"interswitch_go_testing/src/config"
 	"interswitch_go_testing/src/credentialConfig"
 	"interswitch_go_testing/src/utils"
 	"io"
+	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -34,7 +38,12 @@ func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardReques
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -56,6 +65,7 @@ func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardReques
 }
 
 func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentRequest) (*responses.PurchaseRecurrentResponse, error) {
+
 	client := &http.Client{Timeout: 100 * time.Second}
 
 	requestBody, err := json.Marshal(request)
@@ -63,16 +73,21 @@ func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentReque
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", credentialConfig.VALIDATE_PURCHASE_RECURRENT_URL, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", config.Config.ValidatePurchaseRecurrentUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", credentialConfig.AUTHTOKEN)
+	req.Header.Set("Authorization", config.Config.AUTHTOKEN)
 
 	resp, err := client.Do(req)
 	if err != nil {
+		if urlErr, ok := err.(*url.Error); ok {
+			if opErr, ok := urlErr.Err.(*net.OpError); ok {
+				log.Printf("Network error: %v", opErr)
+			}
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -82,7 +97,10 @@ func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentReque
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	log.Printf("Response status: %s", resp.Status)
+	log.Printf("Response body: %s", body)
+
+	if resp.StatusCode != http.StatusAccepted {
 		return nil, errors.New(utils.FailedToProcessRecurrentPurchase)
 	}
 

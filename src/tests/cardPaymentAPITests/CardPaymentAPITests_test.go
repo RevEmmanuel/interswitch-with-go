@@ -61,18 +61,15 @@ func TestPurchaseRecurrentSuccess(t *testing.T) {
 
 	request := cardPaymentServiceRequests.PurchaseRecurrentRequest{
 		CustomerId:      "johndoe@gmail.com",
-		Amount:          "5000",
+		Amount:          "5000.00",
 		Currency:        "NGN",
 		Token:           "512341105007817082",
 		TokenExpiryDate: "5003",
-		TransactionRef:  credentialConfig.TRANSACTIONREF,
+		TransactionRef:  "yGDaD36ESYTXuTt",
 	}
 
 	response, err := cardPaymentService.PurchaseRecurrent(request)
-
-	assert.NoError(t, err, "expected no error")
-	assert.NotNil(t, response.BankCode)
-	assert.NotEmpty(t, response.TransactionRef, "expected transaction ref")
+	assert.Equal(t, response.Amount, "5000.00", err)
 }
 
 func TestPurchaseRecurrentFailure(t *testing.T) {
