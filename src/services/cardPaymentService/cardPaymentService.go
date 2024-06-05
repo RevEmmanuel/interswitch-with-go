@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/go-resty/resty/v2"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/Dtos/responses"
 	"interswitch_go_testing/src/credentialConfig"
@@ -18,49 +19,59 @@ import (
 
 func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardRequest) (*responses.TokenizeCardResponse, error) {
 
-	client := &http.Client{Timeout: 100 * time.Second}
+	client := resty.New()
 
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", credentialConfig.TOKENIZETRANSACTIONURL, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return nil, err
-	}
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.TokenizeCardResponse{}).
+		Post(credentialConfig.TOKENIZETRANSACTIONURL)
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", credentialConfig.AUTHTOKEN)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
-	}(resp.Body)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
+	if resp.IsError() {
 		//return nil, errors.New("request failed with status " + resp.Status)
 		return nil, errors.New(utils.UnableToTokenizeCard)
 	}
-
-	var tokenizeCardResponse responses.TokenizeCardResponse
-	err = json.Unmarshal(body, &tokenizeCardResponse)
 	if err != nil {
 		return nil, err
 	}
 
-	return &tokenizeCardResponse, nil
+	response := resp.Result().(*responses.TokenizeCardResponse)
+	return response, nil
+
+	//client := &http.Client{Timeout: 10 * time.Second}
+	//req, err := http.NewRequest("POST", credentialConfig.TOKENIZETRANSACTIONURL, bytes.NewBuffer(requestBody))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//req.Header.Set("Content-Type", "application/json")
+	//req.Header.Set("Authorization", credentialConfig.AUTHTOKEN)
+
+	//resp, err := client.Do(req)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//defer func(Body io.ReadCloser) {
+	//	err := Body.Close()
+	//	if err != nil {
+	//
+	//	}
+	//}(resp.Body)
+
+	//body, err := io.ReadAll(resp.Body)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//var tokenizeCardResponse responses.TokenizeCardResponse
+	//err = json.Unmarshal(body, &tokenizeCardResponse)
+
 }
 
 func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentRequest) (*responses.PurchaseRecurrentResponse, error) {
