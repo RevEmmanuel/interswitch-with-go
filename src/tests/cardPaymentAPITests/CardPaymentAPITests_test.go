@@ -36,7 +36,7 @@ func TestTokenizeCardRecurrentFailure(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	request := cardPaymentServiceRequests.TokenizeCardRequest{
 		TransactionRef: "invalid_transactionRef",
-		AuthData:       "invalid_auth_data",
+		AuthData:       "invalid_auth_data-request",
 	}
 
 	response, err := cardPaymentService.TokenizeCardRecurrent(request)
