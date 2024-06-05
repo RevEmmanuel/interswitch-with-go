@@ -14,6 +14,7 @@ import (
 )
 
 func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardRequest) (*responses.TokenizeCardResponse, error) {
+
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	requestBody, err := json.Marshal(request)
@@ -21,11 +22,7 @@ func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardReques
 		return nil, err
 	}
 
-	req, err := http.NewRequest(
-		"POST",
-		credentialConfig.TOKENIZETRANSACTIONURL,
-		bytes.NewBuffer(requestBody))
-
+	req, err := http.NewRequest("POST", credentialConfig.TOKENIZETRANSACTIONURL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
@@ -37,37 +34,36 @@ func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardReques
 	if err != nil {
 		return nil, err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
+	defer resp.Body.Close()
 
-		}
-	}(resp.Body)
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		var response responses.TokenizeCardResponse
-		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return nil, err
-		}
-		return &response, nil
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New(utils.UnableToTokenizeCard)
+	if resp.StatusCode != http.StatusOK {
+		//return nil, errors.New("request failed with status " + resp.Status)
+		return nil, errors.New(utils.UnableToTokenizeCard)
+	}
+
+	var tokenizeCardResponse responses.TokenizeCardResponse
+	err = json.Unmarshal(body, &tokenizeCardResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tokenizeCardResponse, nil
 }
 
 func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentRequest) (*responses.PurchaseRecurrentResponse, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 100 * time.Second}
 
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(
-		"POST",
-		credentialConfig.VALIDATE_PURCHASE_RECURRENT_URL,
-		bytes.NewBuffer(requestBody))
-
+	req, err := http.NewRequest("POST", credentialConfig.VALIDATE_PURCHASE_RECURRENT_URL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
@@ -79,19 +75,22 @@ func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentReque
 	if err != nil {
 		return nil, err
 	}
-	defer func(Body io.ReadCloser) {
-		if cerr := Body.Close(); cerr != nil && err == nil {
-			err = cerr
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		var response responses.PurchaseRecurrentResponse
-		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return nil, err
-		}
-		return &response, nil
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New(utils.FailedToProcessRecurrentPurchase)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(utils.FailedToProcessRecurrentPurchase)
+	}
+
+	var purchaseRecurrentResponse responses.PurchaseRecurrentResponse
+	err = json.Unmarshal(body, &purchaseRecurrentResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &purchaseRecurrentResponse, nil
 }

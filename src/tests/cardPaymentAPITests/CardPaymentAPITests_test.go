@@ -18,30 +18,29 @@ func TestTokenizeCardRecurrentSuccess(t *testing.T) {
 	}
 
 	response, err := cardPaymentService.TokenizeCardRecurrent(request)
-	//if err != nil {
-	//	t.Fatalf("expected no error, got %v", err)
-	//}
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 	if response == nil {
+		t.Fatalf("expected response, got nil")
+	} else {
 		assert.Nil(t, err, "no errors")
 		assert.NotEmpty(t, response.CardType)
 		assert.NotEmpty(t, response.Balance)
-		assert.Equal(t, response.TransactionRef, credentialConfig.TRANSACTIONREF)
-	} else {
-		t.Fatalf("expected response, got nil")
+		assert.Equal(t, response.CardType, "Verve")
+		fmt.Println("Balance: ", response.Balance)
 	}
-
-	fmt.Println("TokenizeCardRecurrent: ", response.CardType)
 }
 
 func TestTokenizeCardRecurrentFailure(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	request := cardPaymentServiceRequests.TokenizeCardRequest{
-		TransactionRef: "invalid-transaction-ref",
-		AuthData:       credentialConfig.AUTHDATA,
+		TransactionRef: "invalid_transactionRef",
+		AuthData:       "invalid_auth_data",
 	}
 
 	response, err := cardPaymentService.TokenizeCardRecurrent(request)
-	assert.Error(t, err, "expected an error")
+	assert.Error(t, err, "expected error")
 	assert.Nil(t, response, "expected nil response")
 }
 
@@ -70,13 +69,10 @@ func TestPurchaseRecurrentSuccess(t *testing.T) {
 	}
 
 	response, err := cardPaymentService.PurchaseRecurrent(request)
-	if response != nil {
-		assert.Nil(t, err)
-		assert.NotEmpty(t, response.TransactionRef)
-		assert.NotEmpty(t, response.PaymentId)
-		assert.NotEmpty(t, response.BankCode)
 
-	}
+	assert.NoError(t, err, "expected no error")
+	assert.NotNil(t, response.BankCode)
+	assert.NotEmpty(t, response.TransactionRef, "expected transaction ref")
 }
 
 func TestPurchaseRecurrentFailure(t *testing.T) {

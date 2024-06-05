@@ -1,12 +1,11 @@
 package responses
 
-import "time"
-
 type TokenizeCardResponse struct {
-	CardType        string    `json:"cardType"`
-	Balance         string    `json:"balance"`
-	Token           string    `json:"token"`
-	TokenExpiryDate time.Time `json:"tokenExpiryDate"`
-	PanLast4Digits  string    `json:"panLast4Digits"`
-	TransactionRef  string    `json:"transactionRef"`
+	TransactionRef  string `json:"transactionRef"`
+	AccountNumber   string `json:"accountNumber"`
+	Token           string `json:"token"`
+	TokenExpiryDate string `json:"tokenExpiryDate"`
+	PanLast4Digits  string `json:"panLast4Digits"`
+	CardType        string `json:"cardType"`
+	Balance         string `json:"balance"`
 }
