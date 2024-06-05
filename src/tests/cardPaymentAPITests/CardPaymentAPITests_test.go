@@ -70,7 +70,8 @@ func TestPurchaseRecurrentSuccess(t *testing.T) {
 
 	response, err := cardPaymentService.PurchaseRecurrent(request)
 	assert.NotNil(t, response)
-	assert.Equal(t, response.Amount, "5000.00", "Error: ", err)
+	fmt.Println(response)
+	assert.Equal(t, response.Amount, "5000.00", err)
 }
 
 func TestPurchaseRecurrentFailure(t *testing.T) {
