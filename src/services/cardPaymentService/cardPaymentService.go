@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/Dtos/responses"
 	"interswitch_go_testing/src/credentialConfig"
@@ -23,6 +24,8 @@ func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardReques
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
+	} else {
+		fmt.Printf("%v", client)
 	}
 
 	req, err := http.NewRequest("POST", credentialConfig.TOKENIZETRANSACTIONURL, bytes.NewBuffer(requestBody))
