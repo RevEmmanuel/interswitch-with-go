@@ -18,7 +18,7 @@ import (
 
 func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardRequest) (*responses.TokenizeCardResponse, error) {
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 100 * time.Second}
 
 	requestBody, err := json.Marshal(request)
 	if err != nil {
@@ -95,9 +95,6 @@ func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentReque
 	if err != nil {
 		return nil, err
 	}
-
-	log.Printf("Response status: %s", resp.Status)
-	log.Printf("Response body: %s", body)
 
 	if resp.StatusCode != http.StatusAccepted {
 		return nil, errors.New(utils.FailedToProcessRecurrentPurchase)
