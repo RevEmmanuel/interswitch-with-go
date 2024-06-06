@@ -12,4 +12,8 @@ const (
 	FailedToConfirmDynamicTransfer = "failed to confirm dynamic transfer"
 
 	FailedToGetRefund = "failed to get the refund"
+
+	UnableToCreateRefundTransaction = "unable to create refund transaction"
+
+	FailedToPayWithUSSD = "failed to pay with ussd"
 )

@@ -146,3 +146,84 @@ func GetRefund(request cardPaymentServiceRequests.GetRefundRequest) (*responses.
 	response := resp.Result().(*responses.GetRefundResponse)
 	return response, nil
 }
+
+func GetRefundInfo(request cardPaymentServiceRequests.GetRefundInfoRequest) (*responses.GetRefundInfoResponse, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetQueryParam("refundReference", request.RefundReference).
+		SetResult(&responses.GetRefundInfoResponse{}).
+		Get(credentialConfig.GET_REFUND_INFO_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New("failed to get the refund")
+	}
+
+	response := resp.Result().(*responses.GetRefundInfoResponse)
+	if response.RefundReference == "" {
+		return nil, errors.New("invalid refund reference")
+	}
+
+	return response, nil
+}
+
+func CreateRefundTransaction(request cardPaymentServiceRequests.CreateRefundTransactionRequest) (*responses.CreateRefundTransactionResponse, error) {
+	client := resty.New()
+
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.CreateRefundTransactionResponse{}).
+		Post(credentialConfig.GET_REFUND_INFO_URL)
+
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		if resp.StatusCode() == 404 {
+			return nil, errors.New("invalid refund or parent transaction reference")
+		}
+		return nil, errors.New(utils.UnableToCreateRefundTransaction)
+	}
+
+	response := resp.Result().(*responses.CreateRefundTransactionResponse)
+	return response, nil
+}
+
+func PayWithUSSD(request cardPaymentServiceRequests.PayWithUSSDRequest) (*responses.PayWithUSSDResponse, error) {
+	client := resty.New()
+
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.PayWithUSSDResponse{}).
+		Post(credentialConfig.PAY_WITH_USSD_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToPayWithUSSD)
+	}
+	response := resp.Result().(*responses.PayWithUSSDResponse)
+	return response, nil
+}

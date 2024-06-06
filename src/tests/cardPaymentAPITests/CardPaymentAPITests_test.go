@@ -1,15 +1,25 @@
 package cardPaymentAPITests
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/credentialConfig"
 	"interswitch_go_testing/src/services/cardPaymentService"
-	"log"
+	"math/rand"
 	"testing"
+	"time"
 )
+
+func generateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	character := make([]byte, length)
+	for i := range character {
+		character[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(character)
+}
 
 func TestTokenizeCardRecurrentSuccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -29,7 +39,6 @@ func TestTokenizeCardRecurrentSuccess(t *testing.T) {
 		assert.NotEmpty(t, response.CardType)
 		assert.NotEmpty(t, response.Balance)
 		assert.Equal(t, response.CardType, "Verve")
-		fmt.Println("Balance: ", response.Balance)
 	}
 }
 
@@ -71,7 +80,6 @@ func TestPurchaseRecurrentSuccess(t *testing.T) {
 
 	response, err := cardPaymentService.PurchaseRecurrent(request)
 	assert.NotNil(t, response)
-	fmt.Println(response)
 	assert.Equal(t, response.Amount, "5000.00", err)
 }
 
@@ -90,12 +98,6 @@ func TestPurchaseRecurrentFailure(t *testing.T) {
 	response, err := cardPaymentService.PurchaseRecurrent(request)
 	assert.NotNil(t, err, "expected an error")
 	assert.Nil(t, response, "expected the response to be nil")
-
-	if err != nil {
-		log.Printf("Received expected error: %v", err)
-	} else {
-		log.Fatal("Expected error but got none")
-	}
 }
 
 func TestGetTransactionsSuccess(t *testing.T) {
@@ -111,7 +113,6 @@ func TestGetTransactionsSuccess(t *testing.T) {
 	response, err := cardPaymentService.GetTransactions(request)
 	assert.Nil(t, err, "no errors")
 	assert.NotEmpty(t, response.Count, "count should not be empty")
-	fmt.Printf("Response: %+v\n", response)
 }
 
 func TestConfirmDynamicTransferSuccess(t *testing.T) {
@@ -172,4 +173,68 @@ func TestGetRefundInvalidMerchantCode(t *testing.T) {
 	assert.NotNil(t, err, "expected an error")
 	assert.Nil(t, response, "expected no response")
 	assert.Error(t, err, "expected an error")
+}
+
+func TestGetRefundInfo(t *testing.T) {
+	request := cardPaymentServiceRequests.GetRefundInfoRequest{
+		RefundReference: "MX6072kjsd313sjdsyegdie9322ssaud0004",
+	}
+
+	response, err := cardPaymentService.GetRefundInfo(request)
+	assert.Nil(t, err)
+	assert.NotNil(t, response)
+}
+
+func TestGetRefundInfoInvalidReference(t *testing.T) {
+	request := cardPaymentServiceRequests.GetRefundInfoRequest{
+		RefundReference: "invalid_reference",
+	}
+
+	response, err := cardPaymentService.GetRefundInfo(request)
+	assert.NotNil(t, err, "expected an error")
+	assert.Nil(t, response, "expected no response")
+	assert.Equal(t, "invalid refund reference", err.Error(), "expected error message to match")
+}
+
+func TestCreateRefundTransactionSuccess(t *testing.T) {
+	randomRefundReference := credentialConfig.MERCHANT_CODE + generateRandomString(24)
+	request := cardPaymentServiceRequests.CreateRefundTransactionRequest{
+
+		RefundReference:            randomRefundReference,
+		ParentTransactionReference: "QcYm7bz1N0ckTSb",
+		RefundAmount:               "10",
+	}
+
+	response, err := cardPaymentService.CreateRefundTransaction(request)
+	assert.Nil(t, err)
+	assert.Equal(t, response.RefundReference, randomRefundReference)
+	assert.Equal(t, response.MerchantCode, credentialConfig.MERCHANT_CODE)
+}
+
+func TestCreateRefundTransactionWithInvalidRequestObject(t *testing.T) {
+	request := cardPaymentServiceRequests.CreateRefundTransactionRequest{
+
+		RefundReference:            "invalid_Refund_Reference",
+		ParentTransactionReference: "Invalid_Transaction_Reference",
+		RefundAmount:               "10",
+	}
+
+	response, err := cardPaymentService.CreateRefundTransaction(request)
+	assert.NotNil(t, err)
+	assert.Nil(t, response, "expected no response")
+}
+
+func TestPayWithUSSDSuccess(t *testing.T) {
+	request := cardPaymentServiceRequests.PayWithUSSDRequest{
+		Amount:                       "5000",
+		BankCode:                     "GTB",
+		Surcharge:                    "0",
+		CurrencyCode:                 "566",
+		MerchantTransactionReference: "DhbRpGE1KpHmLPK",
+	}
+
+	response, err := cardPaymentService.PayWithUSSD(request)
+	assert.Nil(t, err)
+	assert.NotNil(t, response, "expected a response")
+	assert.Equal(t, response.TransactionReference, request.MerchantTransactionReference)
 }

@@ -18,4 +18,8 @@ const (
 	CONFIRM_DYNAMIC_TRANSFER_URL = "https://qa.interswitchng.com/paymentgateway/api/v1/virtualaccounts/transaction"
 
 	GET_REFUND_URL = "https://qa.interswitchng.com/paymentgateway/api/v1/refunds"
+
+	GET_REFUND_INFO_URL = "https://qa.interswitchng.com/paymentgateway/api/v1/refunds"
+
+	PAY_WITH_USSD_URL = "https://qa.interswitchng.com/collections/api/v1/sdk/ussd/generate"
 )
