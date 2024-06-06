@@ -1,26 +1,19 @@
 package cardPaymentService
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/Dtos/responses"
 	"interswitch_go_testing/src/credentialConfig"
 	"interswitch_go_testing/src/utils"
-	"io"
-	"log"
-	"net"
-	"net/http"
-	"net/url"
-	"time"
 )
 
 func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardRequest) (*responses.TokenizeCardResponse, error) {
 
 	client := resty.New()
-
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -44,78 +37,112 @@ func TokenizeCardRecurrent(request cardPaymentServiceRequests.TokenizeCardReques
 	response := resp.Result().(*responses.TokenizeCardResponse)
 	return response, nil
 
-	//client := &http.Client{Timeout: 10 * time.Second}
-	//req, err := http.NewRequest("POST", credentialConfig.TOKENIZETRANSACTIONURL, bytes.NewBuffer(requestBody))
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//req.Header.Set("Content-Type", "application/json")
-	//req.Header.Set("Authorization", credentialConfig.AUTHTOKEN)
-
-	//resp, err := client.Do(req)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer func(Body io.ReadCloser) {
-	//	err := Body.Close()
-	//	if err != nil {
-	//
-	//	}
-	//}(resp.Body)
-
-	//body, err := io.ReadAll(resp.Body)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//var tokenizeCardResponse responses.TokenizeCardResponse
-	//err = json.Unmarshal(body, &tokenizeCardResponse)
-
 }
 
 func PurchaseRecurrent(request cardPaymentServiceRequests.PurchaseRecurrentRequest) (*responses.PurchaseRecurrentResponse, error) {
-
-	client := &http.Client{Timeout: 100 * time.Second}
+	client := resty.New()
 
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", credentialConfig.VALIDATE_PURCHASE_RECURRENT_URL, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return nil, err
-	}
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.PurchaseRecurrentResponse{}).
+		Post(credentialConfig.VALIDATE_PURCHASE_RECURRENT_URL)
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", credentialConfig.AUTHTOKEN)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		if urlErr, ok := err.(*url.Error); ok {
-			if opErr, ok := urlErr.Err.(*net.OpError); ok {
-				log.Printf("Network error: %v", opErr)
-			}
-		}
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusAccepted {
+	if resp.IsError() {
 		return nil, errors.New(utils.FailedToProcessRecurrentPurchase)
 	}
-
-	var purchaseRecurrentResponse responses.PurchaseRecurrentResponse
-	err = json.Unmarshal(body, &purchaseRecurrentResponse)
 	if err != nil {
 		return nil, err
 	}
 
-	return &purchaseRecurrentResponse, nil
+	response := resp.Result().(*responses.PurchaseRecurrentResponse)
+	return response, nil
+}
+
+func GetTransactions(request cardPaymentServiceRequests.GetTransactionsRequest) (*responses.GetTransactionsResponse, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetQueryParams(map[string]string{
+			"merchantCode":         request.MerchantCode,
+			"transactionReference": request.TransactionReference,
+			"startDate":            request.StartDate,
+			"endDate":              request.EndDate,
+			"pageSize":             fmt.Sprintf("%d", request.PageSize),
+			"pageNum":              fmt.Sprintf("%d", request.PageNum),
+		}).
+		SetResult(&responses.GetTransactionsResponse{}).
+		Get(credentialConfig.GET_TRANSACTION_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToGetTransactions)
+	}
+
+	response := resp.Result().(*responses.GetTransactionsResponse)
+	return response, nil
+}
+
+func ConfirmDynamicTransfer(request cardPaymentServiceRequests.ConfirmDynamicTransferRequest) (*responses.ConfirmDynamicTransferResponse, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetQueryParams(map[string]string{
+			"merchantCode":         request.MerchantCode,
+			"transactionReference": request.TransactionReference,
+		}).
+		SetResult(&responses.ConfirmDynamicTransferResponse{}).
+		Get(credentialConfig.CONFIRM_DYNAMIC_TRANSFER_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToConfirmDynamicTransfer)
+	}
+
+	response := resp.Result().(*responses.ConfirmDynamicTransferResponse)
+	return response, nil
+}
+
+func GetRefund(request cardPaymentServiceRequests.GetRefundRequest) (*responses.GetRefundResponse, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetQueryParams(map[string]string{
+			"merchantCode": request.MerchantCode,
+			"pageNum":      request.PageNum,
+			"pageSize":     request.PageSize,
+			"startDate":    request.StartDate,
+			"endDate":      request.EndDate,
+		}).
+		SetResult(&responses.GetRefundResponse{}).
+		Get(credentialConfig.GET_REFUND_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToGetRefund)
+	}
+
+	response := resp.Result().(*responses.GetRefundResponse)
+	return response, nil
 }
