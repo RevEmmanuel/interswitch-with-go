@@ -22,4 +22,14 @@ const (
 	GET_REFUND_INFO_URL = "https://qa.interswitchng.com/paymentgateway/api/v1/refunds"
 
 	PAY_WITH_USSD_URL = "https://qa.interswitchng.com/collections/api/v1/sdk/ussd/generate"
+
+	GENERATE_QR_URL = "https://qa.interswitchng.com/collections/api/v1/sdk/qr/generate"
+
+	PAY_WITH_TRANSFER_URL = "https://qa.interswitchng.com/paymentgateway/api/v1/virtualaccounts/transaction"
+
+	GET_WALLET_CARDS_URL = "https://qa.interswitchng.com/collections/api/v1/sdk/wallets"
+
+	GENERATE_ALTERNATIVE_PAYMENTS_URL = "https://qa.interswitchng.com/collections/api/v1/sdk/merchant-details"
+
+	USSD_BANKS_URL = "https://qa.interswitchng.com/collections/api/v1/ussd/issuers/NG"
 )

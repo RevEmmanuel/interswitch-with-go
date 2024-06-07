@@ -227,3 +227,130 @@ func PayWithUSSD(request cardPaymentServiceRequests.PayWithUSSDRequest) (*respon
 	response := resp.Result().(*responses.PayWithUSSDResponse)
 	return response, nil
 }
+
+func GenerateQR(request cardPaymentServiceRequests.GenerateQRRequest) (*responses.GenerateQRResponse, error) {
+	client := resty.New()
+
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.GenerateQRResponse{}).
+		Post(credentialConfig.GENERATE_QR_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToGenerateQRCode)
+	}
+
+	response := resp.Result().(*responses.GenerateQRResponse)
+	return response, nil
+}
+
+func PayWithTransfer(request cardPaymentServiceRequests.PayWithTransferRequest) (*responses.PayWithTransferResponse, error) {
+	client := resty.New()
+
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.PayWithTransferResponse{}).
+		Post(credentialConfig.PAY_WITH_TRANSFER_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToPayWithTransfer)
+	}
+
+	response := resp.Result().(*responses.PayWithTransferResponse)
+	return response, nil
+}
+
+func GetWalletCards(request cardPaymentServiceRequests.GetWalletCardsRequest) (*responses.GetWalletCardsResponse, error) {
+	client := resty.New()
+
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetBody(requestBody).
+		SetResult(&responses.GetWalletCardsResponse{}).
+		Post(credentialConfig.GET_WALLET_CARDS_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToGetWalletCards)
+	}
+
+	response := resp.Result().(*responses.GetWalletCardsResponse)
+	return response, nil
+}
+
+func GenerateAlternativePaymentOptions() (*responses.GenerateAlternativePaymentOptionsResponse, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		SetResult(&responses.GenerateAlternativePaymentOptionsResponse{}).
+		Get(credentialConfig.GENERATE_ALTERNATIVE_PAYMENTS_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToGenerateAlternativePaymentOptions)
+	}
+
+	response := resp.Result().(*responses.GenerateAlternativePaymentOptionsResponse)
+	return response, nil
+}
+
+func GetUSSDBanks() ([]responses.Bank, error) {
+	client := resty.New()
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", credentialConfig.AUTHTOKEN).
+		Get(credentialConfig.USSD_BANKS_URL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(utils.FailedToGetUSSDBanks)
+	}
+
+	var banks []responses.Bank
+	err = json.Unmarshal(resp.Body(), &banks)
+	if err != nil {
+		return nil, err
+	}
+
+	return banks, nil
+}

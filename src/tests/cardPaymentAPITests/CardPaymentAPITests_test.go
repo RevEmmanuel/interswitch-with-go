@@ -1,11 +1,13 @@
 package cardPaymentAPITests
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"interswitch_go_testing/src/Dtos/requests/cardPaymentServiceRequests"
 	"interswitch_go_testing/src/credentialConfig"
 	"interswitch_go_testing/src/services/cardPaymentService"
+	"interswitch_go_testing/src/utils"
 	"math/rand"
 	"testing"
 	"time"
@@ -237,4 +239,111 @@ func TestPayWithUSSDSuccess(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, response, "expected a response")
 	assert.Equal(t, response.TransactionReference, request.MerchantTransactionReference)
+}
+
+func TestGenerateQRSuccess(t *testing.T) {
+	request := cardPaymentServiceRequests.GenerateQRRequest{
+		Amount:                       "5000",
+		Surcharge:                    "0",
+		CurrencyCode:                 "566",
+		MerchantTransactionReference: "2222aaa1123h",
+	}
+
+	response, err := cardPaymentService.GenerateQR(request)
+	assert.Nil(t, err)
+	assert.NotNil(t, response, "expected a response")
+}
+
+func TestGenerateQRInvalidRequestObject(t *testing.T) {
+	request := cardPaymentServiceRequests.GenerateQRRequest{
+		MerchantTransactionReference: "invalid_Transaction_Reference",
+	}
+
+	response, err := cardPaymentService.GenerateQR(request)
+	assert.NotNil(t, err)
+	assert.Nil(t, response, "expected no response")
+}
+
+func TestPayWithTransferSuccess(t *testing.T) {
+	request := cardPaymentServiceRequests.PayWithTransferRequest{
+		MerchantCode:         "MX6072",
+		PayableCode:          "9405967",
+		CurrencyCode:         "566",
+		Amount:               "100000",
+		TransactionReference: credentialConfig.TRANSACTIONREF,
+	}
+
+	response, err := cardPaymentService.PayWithTransfer(request)
+	assert.Nil(t, err)
+	assert.NotNil(t, response, "expected a response")
+}
+
+func TestPayWithTransfer_invalidRequests(t *testing.T) {
+	request := cardPaymentServiceRequests.PayWithTransferRequest{
+		MerchantCode:         "invalid_MerchantCode",
+		PayableCode:          "invalid_Payment_Code",
+		TransactionReference: "invalid_Transaction_Reference",
+	}
+
+	response, err := cardPaymentService.PayWithTransfer(request)
+	assert.NotNil(t, err)
+	assert.Nil(t, response, "expected a response")
+	assert.Error(t, err, "expected an error")
+	assert.Equal(t, err.Error(), utils.FailedToPayWithTransfer)
+}
+
+func TestGetWalletCardsSuccess(t *testing.T) {
+	request := cardPaymentServiceRequests.GetWalletCardsRequest{
+		Username: "bughunting005@gmail.com",
+		Password: "password",
+	}
+
+	response, err := cardPaymentService.GetWalletCards(request)
+	assert.Nil(t, err)
+	assert.NotNil(t, response, "expected a response")
+
+	assert.NotEmpty(t, response.PaymentMethods, "expected payment methods")
+	assert.Equal(t, "bughunting005@gmail.com", response.User.Email)
+	assert.Equal(t, "2348081094611", response.User.MobileNo)
+
+	for _, method := range response.PaymentMethods {
+		assert.NotEmpty(t, method.CardTypeCode, "expected card type code")
+		assert.NotEmpty(t, method.MaskedPan, "expected masked PAN")
+		assert.NotEmpty(t, method.CardIdentifier, "expected card identifier")
+	}
+}
+
+func TestGetWalletCards_invalidCredential(t *testing.T) {
+	request := cardPaymentServiceRequests.GetWalletCardsRequest{
+		Username: "invalid_username",
+		Password: "invalid_password",
+	}
+
+	response, err := cardPaymentService.GetWalletCards(request)
+	assert.NotNil(t, err)
+	assert.Error(t, err, "expected an error")
+	assert.Nil(t, response, "expected no response")
+}
+
+func TestGenerateAlternativePaymentOptionsSuccess(t *testing.T) {
+	response, err := cardPaymentService.GenerateAlternativePaymentOptions()
+	assert.Nil(t, err)
+	assert.NotNil(t, response, "expected a response")
+
+	assert.Equal(t, "sadd", response.Merchant.Name)
+	assert.Equal(t, "MX6072", response.Merchant.MerchantCode)
+	assert.NotEmpty(t, response.PaymentOptions, "expected payment options")
+
+	for _, option := range response.PaymentOptions {
+		assert.NotEmpty(t, option.PayableCode, "expected payable code")
+		assert.NotEmpty(t, option.ProviderCode, "expected provider code")
+		assert.NotNil(t, option.Enabled, "expected enabled status")
+		fmt.Println(option.AdditionalInformation)
+	}
+}
+
+func TestGetUSSDBanksSuccess(t *testing.T) {
+	banks, err := cardPaymentService.GetUSSDBanks()
+	assert.Nil(t, err)
+	assert.NotNil(t, banks, "expected a list of banks")
 }
